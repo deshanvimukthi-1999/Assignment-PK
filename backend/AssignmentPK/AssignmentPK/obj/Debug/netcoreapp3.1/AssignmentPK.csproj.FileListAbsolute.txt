@@ -1,0 +1,7 @@
+D:\C#\AssignmentPK\AssignmentPK\obj\Debug\netcoreapp3.1\AssignmentPK.csproj.AssemblyReference.cache
+D:\C#\AssignmentPK\AssignmentPK\obj\Debug\netcoreapp3.1\AssignmentPK.GeneratedMSBuildEditorConfig.editorconfig
+D:\C#\AssignmentPK\AssignmentPK\obj\Debug\netcoreapp3.1\AssignmentPK.AssemblyInfoInputs.cache
+D:\C#\AssignmentPK\AssignmentPK\obj\Debug\netcoreapp3.1\AssignmentPK.AssemblyInfo.cs
+D:\C#\AssignmentPK\AssignmentPK\obj\Debug\netcoreapp3.1\AssignmentPK.csproj.CoreCompileInputs.cache
+D:\C#\AssignmentPK\AssignmentPK\obj\Debug\netcoreapp3.1\AssignmentPK.MvcApplicationPartsAssemblyInfo.cs
+D:\C#\AssignmentPK\AssignmentPK\obj\Debug\netcoreapp3.1\AssignmentPK.MvcApplicationPartsAssemblyInfo.cache
