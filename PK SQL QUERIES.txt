@@ -1,0 +1,49 @@
+CREATE DATABASE schoolsystemDB
+
+USE schoolsystemDB
+
+CREATE TABLE Classrooms (
+    ClassroomID INT IDENTITY(1,1) PRIMARY KEY,
+    ClassroomName NVARCHAR(50) NOT NULL
+);
+
+CREATE TABLE Subjects (
+    SubjectID INT IDENTITY(1,1) PRIMARY KEY,
+    SubjectName VARCHAR(50) NOT NULL
+);
+
+
+CREATE TABLE Students
+(
+    StudentID INT PRIMARY KEY IDENTITY(1,1),
+	ClassroomID INT FOREIGN KEY REFERENCES Classrooms (ClassroomID) NULL,
+    FirstName VARCHAR(50) NOT NULL,
+    LastName VARCHAR(50) NOT NULL,
+    ContactPerson VARCHAR(100) NOT NULL,
+    ContactNo VARCHAR(20) NOT NULL,
+    EmailAddress VARCHAR(100) NOT NULL,
+    DateOfBirth DATE NOT NULL,
+    Age INT NOT NULL,
+   
+);
+
+CREATE TABLE Teachers (
+    TeacherID INT IDENTITY(1,1) PRIMARY KEY,
+    FirstName VARCHAR(50) NOT NULL,
+    LastName VARCHAR(50),
+    ContactNo VARCHAR(20) NOT NULL,
+    EmailAddress VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE AllocateSubjects (
+    AllocateSubjectID INT IDENTITY(1,1) PRIMARY KEY,
+    TeacherID INT FOREIGN KEY REFERENCES Teachers (TeacherID),
+    SubjectID INT FOREIGN KEY REFERENCES Subjects (SubjectID)
+);
+
+CREATE TABLE AllocateClassrooms (
+    AllocateClassroomID INT IDENTITY(1,1) PRIMARY KEY,
+    TeacherID INT FOREIGN KEY REFERENCES Teachers (TeacherID),
+    ClassroomID INT FOREIGN KEY REFERENCES Classrooms (ClassroomID)
+);
+

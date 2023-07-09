@@ -1,74 +1,34 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using Microsoft.AspNetCore.Mvc;
+﻿using AssignmentPK.Data;
 using AssignmentPK.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
-namespace AssignmentPK.Controllers
+
+namespace AssignmentPK.Controllers  
 {
     [Route("api/[controller]")]
+    [ApiController]
     public class SubjectController : ControllerBase
     {
-        private readonly List<Subjects> _subjects = new List<Subjects>();
+        private readonly MyDbContext _dbContext;
 
-        // GET: /api/Subject
+        public SubjectController(MyDbContext dbContext)
+        {
+            _dbContext = dbContext;
+        }
+
+        // GET: api/Subject
         [HttpGet]
-        [Route("subject")]
-        public ActionResult<IEnumerable<Subjects>> GetSubjects()
+        public async Task<ActionResult<IEnumerable<Subjects>>> GetSubjects()
         {
-            return _subjects;
+            return await _dbContext.Subjects.ToListAsync();
         }
 
-        // POST: /api/Subject
-        [HttpPost]
-        [Route("subject")]
-        public ActionResult<Subjects> AddSubject(Subjects subject)
-        {
-            subject.SubjectId = _subjects.Count + 1;
-            _subjects.Add(subject);
-
-            return CreatedAtAction(nameof(GetSubjectById), new { id = subject.SubjectId }, subject);
-        }
-
-        // PUT: /api/Subject/{id}
-        [HttpPut("{id}")]
-        [Route("subject")]
-        public IActionResult UpdateSubject(int id, Subjects updatedSubject)
-        {
-            var subject = _subjects.FirstOrDefault(s => s.SubjectId == id);
-
-            if (subject == null)
-            {
-                return NotFound();
-            }
-
-            subject.SubjectName = updatedSubject.SubjectName;
-
-            return Ok(subject);
-        }
-
-        // DELETE: /api/Subject/{id}
-        [HttpDelete("{id}")]
-        [Route("subject")]
-        public IActionResult DeleteSubject(int id)
-        {
-            var subject = _subjects.FirstOrDefault(s => s.SubjectId == id);
-
-            if (subject == null)
-            {
-                return NotFound();
-            }
-
-            _subjects.Remove(subject);
-
-            return Ok();
-        }
-
-        // GET: /api/Subject/{id}
+        // GET: api/Subject/5
         [HttpGet("{id}")]
-        [Route("subject/{id}")]
-        public ActionResult<Subjects> GetSubjectById(int id)
+        public async Task<ActionResult<Subjects>> GetSubject(int id)
         {
-            var subject = _subjects.FirstOrDefault(s => s.SubjectId == id);
+            var subject = await _dbContext.Subjects.FindAsync(id);
 
             if (subject == null)
             {
@@ -76,6 +36,67 @@ namespace AssignmentPK.Controllers
             }
 
             return subject;
+        }
+
+        // POST: api/Subject
+        [HttpPost]
+        public async Task<ActionResult<Subjects>> CreateSubject(Subjects subject)
+        {
+            _dbContext.Subjects.Add(subject);
+            await _dbContext.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetSubject), new { id = subject.SubjectId }, subject);
+        }
+
+        // PUT: api/Subject/5
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateSubject(int id, Subjects subject)
+        {
+            if (id != subject.SubjectId)
+            {
+                return BadRequest();
+            }
+
+            _dbContext.Entry(subject).State = EntityState.Modified;
+
+            try
+            {
+                await _dbContext.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!SubjectExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+
+        // DELETE: api/Subject/5
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteSubject(int id)
+        {
+            var subject = await _dbContext.Subjects.FindAsync(id);
+            if (subject == null)
+            {
+                return NotFound();
+            }
+
+            _dbContext.Subjects.Remove(subject);
+            await _dbContext.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        private bool SubjectExists(int id)
+        {
+            return _dbContext.Subjects.Any(s => s.SubjectId == id);
         }
     }
 }

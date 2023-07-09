@@ -4,7 +4,12 @@ import axios from 'axios';
 const StudentDetailReport = () => {
   const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
-  const [report, setReport] = useState(null);
+  const [contactPerson, setContactPerson] = useState('');
+  const [contactNo, setContactNo] = useState('');
+  const [email, setEmail] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [classroom, setClassroom] = useState('');
+  const [subjectTeacherList, setSubjectTeacherList] = useState([]);
 
   useEffect(() => {
     fetchStudents();
@@ -12,57 +17,61 @@ const StudentDetailReport = () => {
 
   const fetchStudents = async () => {
     try {
-      const response = await axios.get('/api/Student');
+      const response = await axios.get('/api/StudentDetailReport/students');
       setStudents(response.data);
     } catch (error) {
       console.error('Error fetching students:', error);
     }
   };
 
-  const generateReport = async () => {
+  const handleSelectedStudentChange = (e) => {
+    const selectedStudentId = parseInt(e.target.value);
+    const student = students.find((s) => s.id === selectedStudentId);
+    setSelectedStudent(student);
+  };
+
+  const handleGenerateReport = () => {
     if (!selectedStudent) {
       console.error('Please select a student.');
       return;
     }
 
-    try {
-      const response = await axios.get(`/api/StudentDetailReport/${selectedStudent.studentId}`);
-      setReport(response.data);
-    } catch (error) {
-      console.error('Error generating report:', error);
-    }
-  };
+    // Retrieve student's information from the selected student object
+    const { contactPerson, contactNo, email, dateOfBirth, classroom, subjectTeacherList } = selectedStudent;
 
-  const handleStudentChange = (e) => {
-    const selectedStudentId = parseInt(e.target.value);
-    const student = students.find((s) => s.studentId === selectedStudentId);
-    setSelectedStudent(student);
+    setContactPerson(contactPerson);
+    setContactNo(contactNo);
+    setEmail(email);
+    setDateOfBirth(dateOfBirth);
+    setClassroom(classroom);
+    setSubjectTeacherList(subjectTeacherList);
   };
 
   return (
     <div>
-      <h2>Generate Student Detail Report</h2>
+      <h2>Student Detail Report</h2>
       <div>
-        <label htmlFor="student">Student *</label>
-        <select id="student" onChange={handleStudentChange}>
+        <label htmlFor="student">Student:</label>
+        <select id="student" onChange={handleSelectedStudentChange} required>
           <option value="">Select a student</option>
           {students.map((student) => (
-            <option key={student.studentId} value={student.studentId}>
+            <option key={student.id} value={student.id}>
               {student.firstName} {student.lastName}
             </option>
           ))}
         </select>
-        <button onClick={generateReport}>Generate Report</button>
       </div>
-      {report && (
+      <button onClick={handleGenerateReport}>Generate Report</button>
+
+      {selectedStudent && (
         <div>
-          <h3>Student Details</h3>
-          <p>Student ID: {report.studentId}</p>
-          <p>Contact Person: {report.contactPerson}</p>
-          <p>Contact No.: {report.contactNo}</p>
-          <p>Email Address: {report.emailAddress}</p>
-          <p>Date of Birth: {report.dateOfBirth}</p>
-          <p>Classroom: {report.classroom}</p>
+          <h3>Student Information</h3>
+          <p>Contact Person: {contactPerson}</p>
+          <p>Contact No.: {contactNo}</p>
+          <p>Email: {email}</p>
+          <p>Date of Birth: {dateOfBirth}</p>
+          <p>Classroom: {classroom}</p>
+
           <h3>Subject & Teacher List</h3>
           <table>
             <thead>
@@ -72,10 +81,10 @@ const StudentDetailReport = () => {
               </tr>
             </thead>
             <tbody>
-              {report.subjectTeachers.map((subjectTeacher, index) => (
-                <tr key={index}>
-                  <td>{subjectTeacher.subject}</td>
-                  <td>{subjectTeacher.teacher}</td>
+              {subjectTeacherList.map((item) => (
+                <tr key={item.id}>
+                  <td>{item.subject}</td>
+                  <td>{item.teacher}</td>
                 </tr>
               ))}
             </tbody>

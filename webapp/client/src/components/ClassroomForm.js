@@ -3,8 +3,9 @@ import axios from 'axios';
 
 const ClassroomForm = () => {
   const [classrooms, setClassrooms] = useState([]);
-  const [classroomName, setClassroomName] = useState('');
-  const [selectedClassroom, setSelectedClassroom] = useState(null);
+  const [classroom, setClassroom] = useState({
+    classroomName: '',
+  });
 
   useEffect(() => {
     fetchClassrooms();
@@ -12,131 +13,57 @@ const ClassroomForm = () => {
 
   const fetchClassrooms = async () => {
     try {
-      const response = await axios.get('/api/Classrooms');
+      const response = await axios.get('/api/Classroom');
       setClassrooms(response.data);
     } catch (error) {
       console.error('Error fetching classrooms:', error);
     }
   };
 
-  const handleAddClassroom = async (e) => {
+  const handleInputChange = (e) => {
+    setClassroom({
+      ...classroom,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!classroomName) {
-      console.error('Please enter a classroom name.');
-      return;
-    }
-
-    const classroom = {
-      classroomName,
-    };
-
     try {
-      const response = await axios.post('/api/Classrooms', classroom);
+      const response = await axios.post('/api/Classroom', classroom);
 
-      if (response.status === 200) {
-        const data = response.data;
-        setClassrooms([...classrooms, data]);
-        setClassroomName('');
+      if (response.status === 201) {
+        const newClassroom = response.data;
+        setClassrooms([...classrooms, newClassroom]);
+        setClassroom({
+          classroomName: '',
+        });
       } else {
-        console.error('Failed to add classroom:', response.statusText);
+        console.error('Failed to create classroom:', response.statusText);
       }
     } catch (error) {
-      console.error('Error adding classroom:', error);
+      console.error('Error creating classroom:', error);
     }
-  };
-
-  const handleEditClassroom = async (e) => {
-    e.preventDefault();
-
-    if (!classroomName) {
-      console.error('Please enter a classroom name.');
-      return;
-    }
-
-    const updatedClassroom = {
-      ...selectedClassroom,
-      classroomName,
-    };
-
-    try {
-      const response = await axios.put(`/api/Classrooms/${selectedClassroom.classroomId}`, updatedClassroom);
-
-      if (response.status === 200) {
-        const data = response.data;
-        const updatedClassrooms = classrooms.map((c) =>
-          c.classroomId === data.classroomId ? data : c
-        );
-        setClassrooms(updatedClassrooms);
-        setClassroomName('');
-        setSelectedClassroom(null);
-      } else {
-        console.error('Failed to update classroom:', response.statusText);
-      }
-    } catch (error) {
-      console.error('Error updating classroom:', error);
-    }
-  };
-
-  const handleDeleteClassroom = async (classroomId) => {
-    try {
-      const response = await axios.delete(`/api/Classrooms/${classroomId}`);
-
-      if (response.status === 200) {
-        const updatedClassrooms = classrooms.filter((c) => c.classroomId !== classroomId);
-        setClassrooms(updatedClassrooms);
-      } else {
-        console.error('Failed to delete classroom:', response.statusText);
-      }
-    } catch (error) {
-      console.error('Error deleting classroom:', error);
-    }
-  };
-
-  const selectClassroom = (classroom) => {
-    setSelectedClassroom(classroom);
-    setClassroomName(classroom.classroomName);
   };
 
   return (
     <div>
-      <h2>Add/Edit Classroom</h2>
-      <form>
+      <h2>Classroom Registration</h2>
+      <form onSubmit={handleSubmit}>
         <div>
-          <label htmlFor="classroomName">Classroom Name *</label>
+          <label htmlFor="classroomName">Classroom Name:</label>
           <input
             type="text"
             id="classroomName"
-            value={classroomName}
-            onChange={(e) => setClassroomName(e.target.value)}
+            name="classroomName"
+            value={classroom.classroomName}
+            onChange={handleInputChange}
             required
           />
         </div>
-        <button onClick={selectedClassroom ? handleEditClassroom : handleAddClassroom}>
-          {selectedClassroom ? 'Update Classroom' : 'Add Classroom'}
-        </button>
-        <button onClick={() => setSelectedClassroom(null)}>Clear</button>
+        <button type="submit">Create Classroom</button>
       </form>
-      <h2>Classrooms</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Classroom Name</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {classrooms.map((classroom) => (
-            <tr key={classroom.classroomId}>
-              <td>{classroom.classroomName}</td>
-              <td>
-                <button onClick={() => selectClassroom(classroom)}>Edit</button>
-                <button onClick={() => handleDeleteClassroom(classroom.classroomId)}>Delete</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
   );
 };

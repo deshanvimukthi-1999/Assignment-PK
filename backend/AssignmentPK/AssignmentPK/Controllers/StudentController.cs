@@ -1,74 +1,100 @@
-﻿using AssignmentPK.Models;
+﻿using AssignmentPK.Data;
+using AssignmentPK.Models;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using System.Linq;
-
+using Microsoft.EntityFrameworkCore;
 namespace AssignmentPK.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     public class StudentController : ControllerBase
     {
-        private static List<Students> students = new List<Students>();
-        private static int studentId = 1;
+        private readonly MyDbContext _dbContext;
 
+        public StudentController(MyDbContext dbContext)
+        {
+            _dbContext = dbContext;
+        }
+
+        // GET: api/Student
         [HttpGet]
-        [Route("student")]
-        public ActionResult<IEnumerable<Students>> Get()
+        public async Task<ActionResult<IEnumerable<Students>>> GetStudents()
         {
-            return Ok(students);
+            return await _dbContext.Students.ToListAsync();
         }
 
+        // GET: api/Student/5
         [HttpGet("{id}")]
-        [Route("student/{id}")]
-        public ActionResult<Students> GetStudentById(int id)
+        public async Task<ActionResult<Students>> GetStudent(int id)
         {
-            var student = students.FirstOrDefault(s => s.StudentId == id);
+            var student = await _dbContext.Students.FindAsync(id);
+
             if (student == null)
             {
                 return NotFound();
             }
-            return Ok(student);
+
+            return student;
         }
 
+        // POST: api/Student
         [HttpPost]
-        [Route("student")]
-        public ActionResult<Students> Register(Students student)
+        public async Task<ActionResult<Students>> CreateStudent(Students student)
         {
-            student.StudentId = studentId++;
-            students.Add(student);
-            return CreatedAtAction(nameof(GetStudentById), new { id = student.StudentId }, student);
+            _dbContext.Students.Add(student);
+            await _dbContext.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetStudent), new { id = student.StudentId }, student);
         }
 
+        // PUT: api/Student/5
         [HttpPut("{id}")]
-        [Route("student/{id}")]
-        public ActionResult<Students> UpdateStudent(int id, Students updatedStudent)
+        public async Task<IActionResult> UpdateStudent(int id, Students student)
         {
-            var student = students.FirstOrDefault(s => s.StudentId == id);
-            if (student == null)
+            if (id != student.StudentId)
             {
-                return NotFound();
+                return BadRequest();
             }
 
-            student.FirstName = updatedStudent.FirstName;
-            student.LastName = updatedStudent.LastName;
-            student.Age = updatedStudent.Age;
+            _dbContext.Entry(student).State = EntityState.Modified;
 
-            return Ok(student);
+            try
+            {
+                await _dbContext.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!StudentExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
         }
 
+        // DELETE: api/Student/5
         [HttpDelete("{id}")]
-        [Route("student/{id}")]
-        public ActionResult DeleteStudent(int id)
+        public async Task<IActionResult> DeleteStudent(int id)
         {
-            var student = students.FirstOrDefault(s => s.StudentId == id);
+            var student = await _dbContext.Students.FindAsync(id);
             if (student == null)
             {
                 return NotFound();
             }
 
-            students.Remove(student);
-            return Ok();
+            _dbContext.Students.Remove(student);
+            await _dbContext.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        private bool StudentExists(int id)
+        {
+            return _dbContext.Students.Any(s => s.StudentId == id);
         }
     }
 }

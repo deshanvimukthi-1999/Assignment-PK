@@ -1,6 +1,7 @@
-﻿using AssignmentPK.Models;
+﻿using AssignmentPK.Data;
+using AssignmentPK.Models;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
 
 namespace AssignmentPK.Controllers
 {
@@ -8,50 +9,93 @@ namespace AssignmentPK.Controllers
     [ApiController]
     public class ClassroomController : ControllerBase
     {
-        private static List<Classrooms> classrooms = new List<Classrooms>();
+        private readonly MyDbContext _dbContext;
 
+        public ClassroomController(MyDbContext dbContext)
+        {
+            _dbContext = dbContext;
+        }
+
+        // GET: api/Classroom
         [HttpGet]
-        [Route("Classrooms")]
-        public ActionResult<IEnumerable<Classrooms>> Get()
+        public async Task<ActionResult<IEnumerable<Classrooms>>> GetClassrooms()
         {
-            return Ok(classrooms);
+            return await _dbContext.Classrooms.ToListAsync();
         }
 
+        // GET: api/Classroom/5
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Classrooms>> GetClassroom(int id)
+        {
+            var classroom = await _dbContext.Classrooms.FindAsync(id);
+
+            if (classroom == null)
+            {
+                return NotFound();
+            }
+
+            return classroom;
+        }
+
+        // POST: api/Classroom
         [HttpPost]
-        [Route("Classrooms")]
-        public ActionResult<Classrooms> Add(Classrooms classroom)
+        public async Task<ActionResult<Classrooms>> CreateClassroom(Classrooms classroom)
         {
-            classroom.ClassroomId = classrooms.Count + 1;
-            classrooms.Add(classroom);
-            return Ok(classroom);
+            _dbContext.Classrooms.Add(classroom);
+            await _dbContext.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetClassroom), new { id = classroom.ClassroomId }, classroom);
         }
 
+        // PUT: api/Classroom/5
         [HttpPut("{id}")]
-        [Route("Classrooms")]
-        public ActionResult<Classrooms> UpdateClassroom(int id, Classrooms classroom)
+        public async Task<IActionResult> UpdateClassroom(int id, Classrooms classroom)
         {
-            var existingClassroom = classrooms.Find(c => c.ClassroomId == id);
-            if (existingClassroom == null)
+            if (id != classroom.ClassroomId)
             {
-                return NotFound();
+                return BadRequest();
             }
 
-            existingClassroom.ClassName = classroom.ClassName;
-            return Ok(existingClassroom);
+            _dbContext.Entry(classroom).State = EntityState.Modified;
+
+            try
+            {
+                await _dbContext.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!ClassroomExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
         }
 
+        // DELETE: api/Classroom/5
         [HttpDelete("{id}")]
-        [Route("Classrooms")]
-        public ActionResult Delete(int id)
+        public async Task<IActionResult> DeleteClassroom(int id)
         {
-            var existingClassroom = classrooms.Find(c => c.ClassroomId == id);
-            if (existingClassroom == null)
+            var classroom = await _dbContext.Classrooms.FindAsync(id);
+            if (classroom == null)
             {
                 return NotFound();
             }
 
-            classrooms.Remove(existingClassroom);
-            return Ok();
+            _dbContext.Classrooms.Remove(classroom);
+            await _dbContext.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        private bool ClassroomExists(int id)
+        {
+            return _dbContext.Classrooms.Any(c => c.ClassroomId == id);
         }
     }
 }

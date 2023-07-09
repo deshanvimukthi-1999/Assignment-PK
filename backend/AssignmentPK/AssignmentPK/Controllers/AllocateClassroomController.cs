@@ -1,53 +1,97 @@
-﻿using AssignmentPK.Models;
+﻿using AssignmentPK.Data;
+using AssignmentPK.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Graph.Models;
-using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
 
 namespace AssignmentPK.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AllocateClassroomController : ControllerBase
+    public class AllocateClassroomsController : ControllerBase
     {
-        private static List<AllocateClassrooms> allocations = new List<AllocateClassrooms>();
-        private static int allocationId = 1;
+        private readonly MyDbContext _dbContext;
 
-        [HttpGet]
-        [Route("teachers")]
-        public ActionResult<IEnumerable<Teachers>> GetTeachers()
+        public AllocateClassroomsController(MyDbContext dbContext)
         {
-           
-            var teachers = new List<Teachers>
-            {
-                new Teachers { TeacherId = 1, FirstName = "John" },
-                new Teachers { TeacherId = 2, FirstName = "Jane" },
-              
-            };
-
-            return Ok(teachers);
+            _dbContext = dbContext;
         }
 
         [HttpGet]
-        [Route("classrooms")]
-        public ActionResult<IEnumerable<Classrooms>> GetClassrooms()
+        public async Task<ActionResult<IEnumerable<AllocateClassrooms>>> GetAllocateClassrooms()
         {
-           
-            var classrooms = new List<Classrooms>
-            {
-                new Classrooms { ClassroomId = 1, ClassName = "Class A" },
-                new Classrooms { ClassroomId = 2, ClassName = "Class B" },
-                
-            };
+            var allocateClassrooms = await _dbContext.AllocateClassrooms.ToListAsync();
+            return Ok(allocateClassrooms);
+        }
 
-            return Ok(classrooms);
+        [HttpGet("{id}")]
+        public async Task<ActionResult<AllocateClassrooms>> GetAllocateClassroom(int id)
+        {
+            var allocateClassroom = await _dbContext.AllocateClassrooms.FindAsync(id);
+
+            if (allocateClassroom == null)
+            {
+                return NotFound();
+            }
+
+            return allocateClassroom;
         }
 
         [HttpPost]
-        public ActionResult<AllocateClassrooms> AllocateClassroom(AllocateClassrooms allocation)
+        public async Task<ActionResult<AllocateClassrooms>> CreateAllocateClassroom(AllocateClassrooms allocateClassroom)
         {
-            allocation.AllocateClassroomId = allocationId++;
-            allocations.Add(allocation);
-            return Ok(allocation);
+            _dbContext.AllocateClassrooms.Add(allocateClassroom);
+            await _dbContext.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetAllocateClassroom), new { id = allocateClassroom.AllocateClassroomId }, allocateClassroom);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateAllocateClassroom(int id, AllocateClassrooms allocateClassroom)
+        {
+            if (id != allocateClassroom.AllocateClassroomId)
+            {
+                return BadRequest();
+            }
+
+            _dbContext.Entry(allocateClassroom).State = EntityState.Modified;
+
+            try
+            {
+                await _dbContext.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!AllocateClassroomExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteAllocateClassroom(int id)
+        {
+            var allocateClassroom = await _dbContext.AllocateClassrooms.FindAsync(id);
+            if (allocateClassroom == null)
+            {
+                return NotFound();
+            }
+
+            _dbContext.AllocateClassrooms.Remove(allocateClassroom);
+            await _dbContext.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        private bool AllocateClassroomExists(int id)
+        {
+            return _dbContext.AllocateClassrooms.Any(a => a.AllocateClassroomId == id);
         }
     }
 }

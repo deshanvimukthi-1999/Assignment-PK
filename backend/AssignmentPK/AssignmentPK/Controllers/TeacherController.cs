@@ -1,6 +1,8 @@
-﻿using AssignmentPK.Models;
+﻿using AssignmentPK.Data;
+using AssignmentPK.Models;
+
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
 
 
 namespace AssignmentPK.Controllers
@@ -9,63 +11,93 @@ namespace AssignmentPK.Controllers
     [ApiController]
     public class TeacherController : ControllerBase
     {
-        private static List<Teachers> teachers = new List<Teachers>();
-        private static int teacherId = 1;
+        private readonly MyDbContext _dbContext;
 
-        [HttpGet]
-        [Route("teacher")]
-        public ActionResult<IEnumerable<Teachers>> Get()
+        public TeacherController(MyDbContext dbContext)
         {
-            return Ok(teachers);
+            _dbContext = dbContext;
         }
 
-        [HttpPost]
-        [Route("teacher")]
-        public ActionResult<Teachers> AddTeacher(Teachers teacher)
+        // GET: api/Teacher
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Teachers>>> GetTeachers()
         {
-            teacher.TeacherId = teacherId++;
-            teachers.Add(teacher);
+            return await _dbContext.Teachers.ToListAsync();
+        }
+
+        // GET: api/Teacher/5
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Teachers>> GetTeacher(int id)
+        {
+            var teacher = await _dbContext.Teachers.FindAsync(id);
+
+            if (teacher == null)
+            {
+                return NotFound();
+            }
+
+            return teacher;
+        }
+
+        // POST: api/Teacher
+        [HttpPost]
+        public async Task<ActionResult<Teachers>> CreateTeacher(Teachers teacher)
+        {
+            _dbContext.Teachers.Add(teacher);
+            await _dbContext.SaveChangesAsync();
+
             return CreatedAtAction(nameof(GetTeacher), new { id = teacher.TeacherId }, teacher);
         }
 
-        [HttpGet("{id}")]
-        [Route("teacher")]
-        public ActionResult<Teachers> GetTeacher(int id)
-        {
-            var teacher = teachers.Find(t => t.TeacherId == id);
-            if (teacher == null)
-                return NotFound();
-
-            return Ok(teacher);
-        }
-
+        // PUT: api/Teacher/5
         [HttpPut("{id}")]
-        [Route("teacher")]
-        public ActionResult<Teachers> UpdateTeacher(int id, Teachers teacher)
+        public async Task<IActionResult> UpdateTeacher(int id, Teachers teacher)
         {
-            var existingTeacher = teachers.Find(t => t.TeacherId == id);
-            if (existingTeacher == null)
-                return NotFound();
+            if (id != teacher.TeacherId)
+            {
+                return BadRequest();
+            }
 
-            existingTeacher.FirstName = teacher.FirstName;
-            existingTeacher.LastName = teacher.LastName;
-            existingTeacher.ContactNo = teacher.ContactNo;
-            existingTeacher.EmailAddress = teacher.EmailAddress;
+            _dbContext.Entry(teacher).State = EntityState.Modified;
 
-            return Ok(existingTeacher);
+            try
+            {
+                await _dbContext.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!TeacherExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
         }
 
+        // DELETE: api/Teacher/5
         [HttpDelete("{id}")]
-        [Route("teacher")]
-
-        public ActionResult DeleteTeacher(int id)
+        public async Task<IActionResult> DeleteTeacher(int id)
         {
-            var teacher = teachers.Find(t => t.TeacherId == id);
+            var teacher = await _dbContext.Teachers.FindAsync(id);
             if (teacher == null)
+            {
                 return NotFound();
+            }
 
-            teachers.Remove(teacher);
-            return Ok();
+            _dbContext.Teachers.Remove(teacher);
+            await _dbContext.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        private bool TeacherExists(int id)
+        {
+            return _dbContext.Teachers.Any(t => t.TeacherId == id);
         }
     }
 }

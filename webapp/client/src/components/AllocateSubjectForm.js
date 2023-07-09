@@ -1,22 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const AllocateSubjectForm = () => {
+const AllocateSubjects = () => {
   const [teachers, setTeachers] = useState([]);
   const [subjects, setSubjects] = useState([]);
-  const [selectedTeacher, setSelectedTeacher] = useState('');
-  const [selectedSubject, setSelectedSubject] = useState('');
-  const [allocatedSubjects, setAllocatedSubjects] = useState([]);
+  const [selectedTeacher, setSelectedTeacher] = useState(null);
+  const [selectedSubject, setSelectedSubject] = useState(null);
 
   useEffect(() => {
-    // Fetch the teachers and subjects data from the server
     fetchTeachers();
     fetchSubjects();
   }, []);
 
   const fetchTeachers = async () => {
     try {
-      const response = await axios.get('/api/AllocateSubject/teachers');
+      const response = await axios.get('/api/AllocateSubjects/teachers');
       setTeachers(response.data);
     } catch (error) {
       console.error('Error fetching teachers:', error);
@@ -25,7 +23,7 @@ const AllocateSubjectForm = () => {
 
   const fetchSubjects = async () => {
     try {
-      const response = await axios.get('/api/AllocateSubject/subjects');
+      const response = await axios.get('/api/AllocateSubjects/subjects');
       setSubjects(response.data);
     } catch (error) {
       console.error('Error fetching subjects:', error);
@@ -33,52 +31,57 @@ const AllocateSubjectForm = () => {
   };
 
   const handleAllocateSubject = async () => {
-    if (selectedTeacher && selectedSubject) {
-      const allocateSubject = {
-        teacherId: parseInt(selectedTeacher),
-        subjectId: parseInt(selectedSubject),
-      };
+    if (!selectedTeacher || !selectedSubject) {
+      console.error('Please select a teacher and subject.');
+      return;
+    }
 
-      try {
-        const response = await axios.post('/api/AllocateSubject', allocateSubject);
+    const allocateSubject = {
+      teacherId: selectedTeacher.teacherId,
+      subjectId: selectedSubject.subjectId,
+    };
 
-        if (response.status === 200) {
-          setAllocatedSubjects([...allocatedSubjects, allocateSubject]);
-          setSelectedTeacher('');
-          setSelectedSubject('');
-        } else {
-          console.error('Failed to allocate subject:', response.statusText);
-        }
-      } catch (error) {
-        console.error('Error allocating subject:', error);
-      }
+    try {
+      const response = await axios.post('/api/AllocateSubjects', allocateSubject);
+      console.log('Allocated subject:', response.data);
+    } catch (error) {
+      console.error('Error allocating subject:', error);
     }
   };
 
   return (
     <div>
+      <h2>Allocate Subjects</h2>
       <div>
-        <label htmlFor="teacher">Teacher *</label>
+        <label htmlFor="teacher">Teacher:</label>
         <select
           id="teacher"
-          value={selectedTeacher}
-          onChange={(e) => setSelectedTeacher(e.target.value)}
+          value={selectedTeacher ? selectedTeacher.teacherId : ''}
+          onChange={(e) => {
+            const teacherId = parseInt(e.target.value);
+            const teacher = teachers.find((t) => t.teacherId === teacherId);
+            setSelectedTeacher(teacher);
+          }}
           required
         >
           <option value="">Select a teacher</option>
           {teachers.map((teacher) => (
             <option key={teacher.teacherId} value={teacher.teacherId}>
-              {teacher.teacherName}
+              {teacher.firstName}
             </option>
           ))}
         </select>
       </div>
       <div>
-        <label htmlFor="subject">Subject *</label>
+        <label htmlFor="subject">Subject:</label>
         <select
           id="subject"
-          value={selectedSubject}
-          onChange={(e) => setSelectedSubject(e.target.value)}
+          value={selectedSubject ? selectedSubject.subjectId : ''}
+          onChange={(e) => {
+            const subjectId = parseInt(e.target.value);
+            const subject = subjects.find((s) => s.subjectId === subjectId);
+            setSelectedSubject(subject);
+          }}
           required
         >
           <option value="">Select a subject</option>
@@ -90,25 +93,8 @@ const AllocateSubjectForm = () => {
         </select>
       </div>
       <button onClick={handleAllocateSubject}>Allocate Subject</button>
-      <h3>Allocated Subjects:</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Teacher</th>
-            <th>Subject</th>
-          </tr>
-        </thead>
-        <tbody>
-          {allocatedSubjects.map((allocatedSubject, index) => (
-            <tr key={index}>
-              <td>{allocatedSubject.teacherId}</td>
-              <td>{allocatedSubject.subjectId}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
   );
 };
 
-export default AllocateSubjectForm;
+export default AllocateSubjects;

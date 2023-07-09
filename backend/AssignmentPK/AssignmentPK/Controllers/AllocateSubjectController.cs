@@ -1,53 +1,98 @@
-﻿using AssignmentPK.Models;
+﻿using AssignmentPK.Data;
+using AssignmentPK.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Graph.Models;
-using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
+
 
 namespace AssignmentPK.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AllocateSubjectController : ControllerBase
+    public class AllocateSubjectsController : ControllerBase
     {
-        private static List<AllocateSubjects> allocatesubjects = new List<AllocateSubjects>();
-        private static int allocatesubjectId = 1;
+        private readonly MyDbContext _dbContext;
 
-        [HttpGet]
-        [Route("teachers")]
-        public ActionResult<IEnumerable<Teachers>> GetTeachers()
+        public AllocateSubjectsController(MyDbContext dbContext)
         {
-            
-            var teachers = new List<Teachers>
-            {
-                new Teachers { TeacherId = 1, FirstName = "John" },
-                new Teachers { TeacherId = 2, FirstName= "Jane" },
-                
-            };
-
-            return Ok(teachers);
+            _dbContext = dbContext;
         }
 
         [HttpGet]
-        [Route("subjects")]
-        public ActionResult<IEnumerable<Subjects>> GetSubjects()
+        public async Task<ActionResult<IEnumerable<AllocateSubjects>>> GetAllocateSubjects()
         {
-           
-            var subjects = new List<Subjects>
-            {
-                new Subjects { SubjectId = 1, SubjectName = "Mathematics" },
-                new Subjects { SubjectId = 2, SubjectName = "Science" },
-           
-            };
+            var allocateSubjects = await _dbContext.AllocateSubjects.ToListAsync();
+            return Ok(allocateSubjects);
+        }
 
-            return Ok(subjects);
+        [HttpGet("{id}")]
+        public async Task<ActionResult<AllocateSubjects>> GetAllocateSubject(int id)
+        {
+            var allocateSubject = await _dbContext.AllocateSubjects.FindAsync(id);
+
+            if (allocateSubject == null)
+            {
+                return NotFound();
+            }
+
+            return allocateSubject;
         }
 
         [HttpPost]
-        public ActionResult<AllocateSubjects> AllocateSubject(AllocateSubjects allocatesubject)
+        public async Task<ActionResult<AllocateSubjects>> CreateAllocateSubject(AllocateSubjects allocateSubject)
         {
-            allocatesubject.AllocateSubjectId  = allocatesubjectId++;
-            allocatesubjects.Add(allocatesubject);
-            return Ok(allocatesubject);
+            _dbContext.AllocateSubjects.Add(allocateSubject);
+            await _dbContext.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetAllocateSubject), new { id = allocateSubject.AllocateSubjectId }, allocateSubject);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateAllocateSubject(int id, AllocateSubjects allocateSubject)
+        {
+            if (id != allocateSubject.AllocateSubjectId)
+            {
+                return BadRequest();
+            }
+
+            _dbContext.Entry(allocateSubject).State = EntityState.Modified;
+
+            try
+            {
+                await _dbContext.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!AllocateSubjectExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteAllocateSubject(int id)
+        {
+            var allocateSubject = await _dbContext.AllocateSubjects.FindAsync(id);
+            if (allocateSubject == null)
+            {
+                return NotFound();
+            }
+
+            _dbContext.AllocateSubjects.Remove(allocateSubject);
+            await _dbContext.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        private bool AllocateSubjectExists(int id)
+        {
+            return _dbContext.AllocateSubjects.Any(a => a.AllocateSubjectId == id);
         }
     }
 }
